@@ -1,0 +1,18 @@
+{
+  "extends": [
+    "eslint:recommended"
+  ],
+  "rules": {
+    "object-curly-spacing": [
+      "error",
+      "always"
+    ],
+    "lines-between-class-members": [
+      "error",
+      "always",
+      {
+        "exceptAfterSingleLine": true
+      }
+    ]
+  }
+}
