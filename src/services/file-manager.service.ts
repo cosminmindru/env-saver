@@ -29,7 +29,7 @@ export default class FileManager {
     this.logger = winston.createLogger({
       transports: [
         new winston.transports.Console({
-          format: winston.format.simple()
+          format: winston.format.printf(info => `${info.message}`)
         })
       ]
     })
