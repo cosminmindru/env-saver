@@ -1,9 +1,6 @@
 import { promises as fs } from 'fs'
 import * as path from 'path'
-import cli from 'cli-ux'
-
-const junkRe = /^\./ // TODO: Make this a y/n param
-const dotEnv = '.env'
+import { REGEX } from "../constants"
 
 type FileManagerOpts = {
 }
@@ -41,7 +38,7 @@ export default class FileManager {
       }
 
       // Handle files
-      if (dirEntry.isFile() && dirEntry.name.startsWith('.env')) {
+      if (dirEntry.isFile() && REGEX.envFileStrict.test(dirEntry.name)) {
         envFiles.push(path.join(dir, dirEntry.name))
       }
     }
@@ -49,54 +46,20 @@ export default class FileManager {
     return envFiles
   }
 
-  async saveEnvFiles(envFiles: string[]): Promise<void> {
-    for (const envFile of envFiles) {
-      // Need to add in the part that checks if the dest folder exists
-      // and make it create it if it doesn't exist, because atm this fails to run properly
-      const strippedEnvFile = envFile.replace(`${this.originDir}${path.sep}`, "")
-      await fs.copyFile(envFile, path.join(this.destDir, strippedEnvFile))
-    }
-  }
+  async saveEnvFiles(originEnvFiles: string[]): Promise<void> {
+    for (const originEnvFilePath of originEnvFiles) {
+      const destEnvFile = originEnvFilePath.replace(`${this.originDir}${path.sep}`, "") // File path only (without dest dir)
+      const destEnvFilePath = path.join(this.destDir, destEnvFile); // Dest file full path including the file
+      const destEnvFileDirOnly = destEnvFilePath.replace(REGEX.envFile, ""); // Dest file path without the file
 
-  /** OLD SCRIPT COPY - TO BE DELETED */
-  async copyFromOriginToDest(): Promise<void> {
-    // TODO: Refactor this into multiple functions such as:
-    // - one that checks that the origin and destination folders exist
-    // - another that looks for env files and returns them
-    // - another that copies the files and so on
-    const hp = await cli.prompt('hello', { type: 'single' })
-    console.log(`hello ${hp}`)
-
-    try {
-      // Get the folders as an array
-      const allFolders = await fs.readdir(this.originDir)
-      const folders = allFolders.filter((folder: string) => !junkRe.test(folder))
-      console.log(folders)
-
-
-      for (const folder of folders) {
-        const allFiles = await fs.readdir(`${this.originDir}/${folder}`)
-        const envFile = allFiles.find((file: string) => file === '.env')
-
-        if (envFile) {
-          const destDirFull = `${this.destDir}/${folder}`
-
-          try {
-            await fs.access(destDirFull)
-          } catch (error) {
-            await fs.mkdir(destDirFull, { recursive: true })
-          }
-
-          await fs.copyFile(
-            `${this.originDir}/${folder}/${dotEnv}`,
-            `${this.destDir}/${folder}/${dotEnv}`,
-          )
-        }
+      // Create the dest directory if it doesn't exist
+      try {
+        await fs.access(destEnvFileDirOnly)
+      } catch (error) {
+        await fs.mkdir(destEnvFileDirOnly, { recursive: true })
       }
-    } catch (e) {
-      // Catch anything bad that happens
-      console.error("We've thrown! Whoops!", e)
+
+      await fs.copyFile(originEnvFilePath, destEnvFilePath)
     }
   }
-  /** OLD SCRIPT COPY - TO BE DELETED */
 }
