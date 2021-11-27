@@ -1,5 +1,5 @@
 export const DEFAULTS = {
-  defaultDestDirName: "env-saver-artifacts",
+  defaultDestDirName: 'env-saver-artifacts',
 }
 
 export const REGEX = {
