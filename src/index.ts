@@ -6,7 +6,7 @@ import FileManager from './services/file-manager.service'
 import { DEFAULTS } from './constants'
 
 class EnvSaver extends Command {
-  static description = 'bulk save env files';
+  static description = 'CLI utility that lets you easily backup your .env files in bulk';
 
   static flags = {
     version: flags.version({
