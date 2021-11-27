@@ -1,7 +1,7 @@
 {
   "name": "env-saver",
   "description": "CLI utility that lets you easily backup your .env files in bulk.",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "Cosmin Mindru @cosminmindru",
   "bin": {
     "env-saver": "./bin/run"
