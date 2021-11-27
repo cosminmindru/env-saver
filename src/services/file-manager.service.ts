@@ -1,8 +1,8 @@
 import { promises as fs } from 'fs'
 import * as path from 'path'
-import * as winston from "winston"
+import * as winston from 'winston'
 
-import { REGEX } from "../constants"
+import { REGEX } from '../constants'
 
 type EnvFilePath = string
 
@@ -23,20 +23,25 @@ export default class FileManager {
   private originDir: string
   private destDir: string
   private envFiles: string[]
-  private verbose: boolean
+  private verbose: boolean;
 
   constructor(originDir: string, destDir: string, opts?: FileManagerOpts) {
-    this.logger = winston.createLogger({
-      transports: [
-        new winston.transports.Console({
-          format: winston.format.printf(info => `${info.message}`)
-        })
-      ]
-    })
     this.originDir = originDir
     this.destDir = destDir
     this.envFiles = []
     this.verbose = opts?.verbose ?? false
+    this.logger = winston.createLogger({
+      transports: [
+        new winston.transports.Console({
+          level: this.verbose ? 'debug' : 'info',
+          format: winston.format.combine(
+            winston.format.colorize(),
+            winston.format.timestamp({ format: 'HH:mm:ss' }),
+            winston.format.printf(info => this.verbose ? `${info.timestamp} ${info.message}` : `${info.message}`),
+          ),
+        }),
+      ],
+    })
   }
 
   get envFilesCount() {
@@ -44,14 +49,13 @@ export default class FileManager {
   }
 
   async findAndSaveEnvFiles({ depth }: FindAndSaveEnvFilesParams = { depth: 2 }): Promise<void> {
-    this.envFiles = await this.recursiveEnvFileLookup(this.originDir, { depth });
+    this.envFiles = await this.recursiveEnvFileLookup(this.originDir, { depth })
     this.logger.info(`✔️ Found ${this.envFilesCount} env files inside "${this.originDir}"`)
 
     await this.saveEnvFiles()
     this.logger.info(`🎉 Successfully saved ${this.envFilesCount} env files inside "${this.destDir}"`)
   }
 
-  // Recursively find all env files down a specified depth level
   private async recursiveEnvFileLookup(dir: string, opts: RecursiveEnvFileLookupOpts): Promise<EnvFilePath[]> {
     const envFiles: EnvFilePath[] = []
     const dirEntries = await fs.readdir(dir, { withFileTypes: true })
@@ -71,31 +75,27 @@ export default class FileManager {
       }
     }
 
-    return envFiles;
+    return envFiles
   }
 
   async saveEnvFiles(): Promise<EnvFilePath[]> {
     const destEnvFilePaths: EnvFilePath[] = []
 
     for (const originEnvFilePath of this.envFiles) {
-      const destEnvFile = originEnvFilePath.replace(`${this.originDir}${path.sep}`, "") // File path only (without dest dir)
-      const destEnvFilePath = path.join(this.destDir, destEnvFile); // Dest file full path including the file
-      const destEnvFileDirOnly = destEnvFilePath.replace(REGEX.envFile, ""); // Dest file path without the file
+      const destEnvFile = originEnvFilePath.replace(`${this.originDir}${path.sep}`, '') // File path only (without dest dir)
+      const destEnvFilePath = path.join(this.destDir, destEnvFile) // Dest file full path including the file
+      const destEnvFileDirOnly = destEnvFilePath.replace(REGEX.envFile, '') // Dest file path without the file
 
       // Create the dest directory if it doesn't exist
       try {
         await fs.access(destEnvFileDirOnly)
       } catch (error) {
         await fs.mkdir(destEnvFileDirOnly, { recursive: true })
-        if (this.verbose) {
-          this.logger.info(`ℹ️ Destination directory "${destEnvFileDirOnly}" successfully created`)
-        }
+        this.logger.debug(`ℹ️ Destination directory "${destEnvFileDirOnly}" successfully created`)
       }
 
       await fs.copyFile(originEnvFilePath, destEnvFilePath)
-      if (this.verbose) {
-        this.logger.info(`ℹ️ Env file "${destEnvFile}" successfully saved`)
-      }
+      this.logger.debug(`ℹ️ Env file "${destEnvFile}" successfully saved`)
       destEnvFilePaths.push(destEnvFilePath)
     }
 
