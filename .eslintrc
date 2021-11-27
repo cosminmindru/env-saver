@@ -1,6 +1,7 @@
 {
   "extends": [
-    "eslint:recommended"
+    "oclif",
+    "oclif-typescript"
   ],
   "rules": {
     "object-curly-spacing": [
@@ -13,6 +14,7 @@
       {
         "exceptAfterSingleLine": true
       }
-    ]
+    ],
+    "no-await-in-loop": 0
   }
 }
